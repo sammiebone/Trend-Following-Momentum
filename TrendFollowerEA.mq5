@@ -147,11 +147,11 @@ void CheckForSignal()
 
     if(buySignal)
     {
-        OpenPosition(OP_BUY, last_atr);
+        OpenPosition(ORDER_TYPE_BUY, last_atr);
     }
     else if(sellSignal)
     {
-        OpenPosition(OP_SELL, last_atr);
+        OpenPosition(ORDER_TYPE_SELL, last_atr);
     }
 }
 
@@ -160,16 +160,16 @@ void CheckForSignal()
 //+------------------------------------------------------------------+
 void OpenPosition(ENUM_ORDER_TYPE orderType, double atrValue)
 {
-    double price = SymbolInfoDouble(_Symbol, orderType == OP_BUY ? SYMBOL_ASK : SYMBOL_BID);
+    double price = SymbolInfoDouble(_Symbol, orderType == ORDER_TYPE_BUY ? SYMBOL_ASK : SYMBOL_BID);
     double slPrice, tpPrice = 0; // No take profit, let the trailing stop manage it
 
     //--- Calculate Stop Loss price based on ATR
     double slDistance = atrValue * atrStopLossMultiplier;
-    if(orderType == OP_BUY)
+    if(orderType == ORDER_TYPE_BUY)
     {
         slPrice = price - slDistance;
     }
-    else // OP_SELL
+    else // ORDER_TYPE_SELL
     {
         slPrice = price + slDistance;
     }
@@ -257,7 +257,7 @@ void ManageTrailingStop()
     double currentStopLoss = position.StopLoss();
     double openPrice = position.PriceOpen();
 
-    if(position.PositionType() == POSITION_TYPE_LONG)
+    if(position.PositionType() == POSITION_TYPE_BUY)
     {
         double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_BID);
         newStopLoss = currentPrice - trailingStopDistance;
@@ -267,7 +267,7 @@ void ManageTrailingStop()
             trade.PositionModify(_Symbol, newStopLoss, position.TakeProfit());
         }
     }
-    else if(position.PositionType() == POSITION_TYPE_SHORT)
+    else if(position.PositionType() == POSITION_TYPE_SELL)
     {
         double currentPrice = SymbolInfoDouble(_Symbol, SYMBOL_ASK);
         newStopLoss = currentPrice + trailingStopDistance;
