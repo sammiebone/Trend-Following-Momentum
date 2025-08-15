@@ -133,7 +133,11 @@ void OpenPosition(int orderType, double atrValue)
     slPrice = NormalizeDouble(slPrice, _Digits);
 
     //--- Open the trade
-    OrderSend(Symbol(), orderType, lotSize, price, 3, slPrice, tpPrice, tradeComment, magicNumber, 0, clrNONE);
+    int ticket = OrderSend(Symbol(), orderType, lotSize, price, 3, slPrice, tpPrice, tradeComment, magicNumber, 0, clrNONE);
+    if(ticket < 0)
+    {
+        Print("OrderSend failed with error #", GetLastError());
+    }
 }
 
 //+------------------------------------------------------------------+
@@ -197,7 +201,11 @@ void ManageTrailingStop()
                     newStopLoss = Bid - trailingStopDistance;
                     if(newStopLoss > OrderOpenPrice() && newStopLoss > OrderStopLoss())
                     {
-                        OrderModify(OrderTicket(), OrderOpenPrice(), NormalizeDouble(newStopLoss, _Digits), OrderTakeProfit(), 0, clrNONE);
+                        bool result = OrderModify(OrderTicket(), OrderOpenPrice(), NormalizeDouble(newStopLoss, _Digits), OrderTakeProfit(), 0, clrNONE);
+                        if(!result)
+                        {
+                           Print("OrderModify failed for trailing stop. Error #", GetLastError());
+                        }
                     }
                 }
                 else // OP_SELL
@@ -205,7 +213,11 @@ void ManageTrailingStop()
                     newStopLoss = Ask + trailingStopDistance;
                     if(newStopLoss < OrderOpenPrice() && (OrderStopLoss() == 0 || newStopLoss < OrderStopLoss()))
                     {
-                        OrderModify(OrderTicket(), OrderOpenPrice(), NormalizeDouble(newStopLoss, _Digits), OrderTakeProfit(), 0, clrNONE);
+                        bool result = OrderModify(OrderTicket(), OrderOpenPrice(), NormalizeDouble(newStopLoss, _Digits), OrderTakeProfit(), 0, clrNONE);
+                        if(!result)
+                        {
+                           Print("OrderModify failed for trailing stop. Error #", GetLastError());
+                        }
                     }
                 }
             }
