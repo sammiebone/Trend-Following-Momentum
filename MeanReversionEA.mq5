@@ -87,9 +87,16 @@ void OnTick()
 {
     //--- Check for new bar to run logic only once per bar
     static datetime lastBarTime = 0;
-    if(Time[0] > lastBarTime)
+    MqlRates rates[1];
+    if(CopyRates(_Symbol, _Period, 0, 1, rates) < 1)
     {
-        lastBarTime = Time[0];
+        return; // Not enough data or an error
+    }
+    datetime currentBarTime = rates[0].time;
+
+    if(currentBarTime > lastBarTime)
+    {
+        lastBarTime = currentBarTime;
         CheckForSignal();
     }
 }
