@@ -183,13 +183,21 @@ void OpenPosition(ENUM_ORDER_TYPE orderType, double atrValue, double tpPrice)
     }
 
     //--- Construct dynamic comment
-    string dynamic_comment = StringFormat("%s | %s | %s", _Symbol, PeriodToString(_Period), tradeComment);
+    string dynamic_comment = StringFormat("%s | %s | %s", _Symbol, EnumToString(_Period), tradeComment);
 
     //--- Open the trade
     if(trade.PositionOpen(_Symbol, orderType, lotSize, price, slPrice, tpPrice, dynamic_comment))
     {
-       //--- Verify the trade was opened with the correct parameters
-       VerifyTradeParameters(trade.ResultPosition(), slPrice, tpPrice, dynamic_comment);
+       //--- After opening, immediately select the position to get its ticket for verification
+       if(position.Select(_Symbol))
+       {
+           ulong position_ticket = position.Ticket();
+           VerifyTradeParameters(position_ticket, slPrice, tpPrice, dynamic_comment);
+       }
+       else
+       {
+           Print("PositionOpen succeeded but could not select the new position for verification on ", _Symbol);
+       }
     }
 }
 
@@ -209,7 +217,6 @@ void VerifyTradeParameters(ulong position_ticket, double intended_sl, double int
 
     double current_sl = position.StopLoss();
     double current_tp = position.TakeProfit();
-    string intended_comment = tradeComment;
     string current_comment = position.Comment();
 
     bool sl_ok = (MathAbs(current_sl - intended_sl) < _Point);
