@@ -182,18 +182,21 @@ void OpenPosition(ENUM_ORDER_TYPE orderType, double atrValue, double tpPrice)
         return;
     }
 
+    //--- Construct dynamic comment
+    string dynamic_comment = StringFormat("%s | %s | %s", _Symbol, PeriodToString(_Period), tradeComment);
+
     //--- Open the trade
-    if(trade.PositionOpen(_Symbol, orderType, lotSize, price, slPrice, tpPrice, tradeComment))
+    if(trade.PositionOpen(_Symbol, orderType, lotSize, price, slPrice, tpPrice, dynamic_comment))
     {
        //--- Verify the trade was opened with the correct parameters
-       VerifyTradeParameters(trade.ResultPosition(), slPrice, tpPrice);
+       VerifyTradeParameters(trade.ResultPosition(), slPrice, tpPrice, dynamic_comment);
     }
 }
 
 //+------------------------------------------------------------------+
 //| Verify and correct SL/TP for a newly opened position             |
 //+------------------------------------------------------------------+
-void VerifyTradeParameters(ulong position_ticket, double intended_sl, double intended_tp)
+void VerifyTradeParameters(ulong position_ticket, double intended_sl, double intended_tp, string intended_comment)
 {
     //--- Give the trade server a moment to process
     Sleep(500);
