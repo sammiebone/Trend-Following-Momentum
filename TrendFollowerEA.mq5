@@ -183,7 +183,7 @@ void OpenPosition(ENUM_ORDER_TYPE orderType, double atrValue)
     }
 
     //--- Construct dynamic comment
-    string dynamic_comment = StringFormat("%s | %s | %s", _Symbol, PeriodToString(_Period), tradeComment);
+    string dynamic_comment = StringFormat("%s | %s | %s", _Symbol, EnumToString(_Period), tradeComment);
 
     //--- Open the trade
     if(trade.PositionOpen(_Symbol, orderType, lotSize, price, slPrice, tpPrice, dynamic_comment))
