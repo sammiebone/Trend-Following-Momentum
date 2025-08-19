@@ -137,11 +137,63 @@ void OpenPosition(int orderType, double atrValue, double tpPrice)
     tpPrice = NormalizeDouble(tpPrice, _Digits);
 
     //--- Open the trade
-    if(OrderSend(Symbol(), orderType, lotSize, price, 3, slPrice, tpPrice, tradeComment, magicNumber, 0, clrNONE) < 0)
+    int ticket = OrderSend(Symbol(), orderType, lotSize, price, 3, slPrice, tpPrice, tradeComment, magicNumber, 0, clrNONE);
+    if(ticket > 0)
+    {
+        //--- Verify the trade was opened with the correct parameters
+        VerifyTradeParameters(ticket, slPrice, tpPrice);
+    }
+    else
     {
        Print("OrderSend failed. Error #", GetLastError());
     }
 }
+
+//+------------------------------------------------------------------+
+//| Verify and correct SL/TP for a newly opened order                |
+//+------------------------------------------------------------------+
+void VerifyTradeParameters(int ticket, double intended_sl, double intended_tp)
+{
+    //--- Give the trade server a moment to process
+    Sleep(500);
+
+    if(!OrderSelect(ticket, SELECT_BY_TICKET))
+    {
+        Print("Failed to select order by ticket #", ticket, " for verification.");
+        return;
+    }
+
+    double current_sl = OrderStopLoss();
+    double current_tp = OrderTakeProfit();
+    string intended_comment = tradeComment;
+    string current_comment = OrderComment();
+
+    // Normalize comparison to avoid floating point issues
+    bool sl_ok = (MathAbs(current_sl - intended_sl) < Point);
+    bool tp_ok = (intended_tp == 0 && current_tp == 0) || (MathAbs(current_tp - intended_tp) < Point);
+    bool comment_ok = (current_comment == intended_comment);
+
+    if(sl_ok && tp_ok)
+    {
+        if(!comment_ok)
+        {
+            Print("Warning: Order #", ticket, " comment mismatch. Expected: '", intended_comment, "', Found: '", current_comment, "'. Cannot modify comment.");
+        }
+        return;
+    }
+
+    Print("Order #", ticket, " parameter mismatch. SL OK: ", sl_ok, ", TP OK: ", tp_ok, ". Attempting to modify.");
+
+    if(!OrderModify(ticket, OrderOpenPrice(), intended_sl, intended_tp, 0, clrNONE))
+    {
+        Print("OrderModify failed for ticket #", ticket, ". Error #", GetLastError());
+    }
+    else
+    {
+        Print("Successfully modified order #", ticket, " to correct SL/TP.");
+    }
+}
+
 
 //+------------------------------------------------------------------+
 //| Calculate position size based on risk and SL distance            |

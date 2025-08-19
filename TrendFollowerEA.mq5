@@ -183,7 +183,56 @@ void OpenPosition(ENUM_ORDER_TYPE orderType, double atrValue)
     }
 
     //--- Open the trade
-    trade.PositionOpen(_Symbol, orderType, lotSize, price, slPrice, tpPrice, tradeComment);
+    if(trade.PositionOpen(_Symbol, orderType, lotSize, price, slPrice, tpPrice, tradeComment))
+    {
+       //--- Verify the trade was opened with the correct parameters
+       VerifyTradeParameters(trade.ResultPosition(), slPrice, tpPrice);
+    }
+}
+
+//+------------------------------------------------------------------+
+//| Verify and correct SL/TP for a newly opened position             |
+//+------------------------------------------------------------------+
+void VerifyTradeParameters(ulong position_ticket, double intended_sl, double intended_tp)
+{
+    //--- Give the trade server a moment to process
+    Sleep(500);
+
+    if(!position.SelectByTicket(position_ticket))
+    {
+        Print("Failed to select position by ticket #", position_ticket, " for verification.");
+        return;
+    }
+
+    double current_sl = position.StopLoss();
+    double current_tp = position.TakeProfit();
+    string intended_comment = tradeComment;
+    string current_comment = position.Comment();
+
+    bool sl_ok = (MathAbs(current_sl - intended_sl) < _Point);
+    bool tp_ok = (intended_tp == 0 && current_tp == 0) || (MathAbs(current_tp - intended_tp) < _Point);
+    bool comment_ok = (current_comment == intended_comment);
+
+    if(sl_ok && tp_ok)
+    {
+        if(!comment_ok)
+        {
+            Print("Warning: Position #", position_ticket, " comment mismatch. Expected: '", intended_comment, "', Found: '", current_comment, "'. Cannot modify comment.");
+        }
+        return;
+    }
+
+    //--- If SL or TP are incorrect, attempt to modify
+    Print("Position #", position_ticket, " parameter mismatch. SL OK: ", sl_ok, ", TP OK: ", tp_ok, ". Attempting to modify.");
+
+    if(!trade.PositionModify(position_ticket, intended_sl, intended_tp))
+    {
+        Print("PositionModify failed for ticket #", position_ticket, ". Error: ", GetLastError());
+    }
+    else
+    {
+        Print("Successfully modified position #", position_ticket, " to correct SL/TP.");
+    }
 }
 
 //+------------------------------------------------------------------+
